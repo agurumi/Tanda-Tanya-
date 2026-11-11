@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tanda Tanya?</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#f6efd9;--gold:#ffd166;--red:#ef476f;--green:#06d6a0;--panel:#1b1a2e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#0b0a14;overflow:hidden;font-family:'VT323',ui-monospace,Menlo,Consolas,monospace;color:var(--cream)}
+body{display:flex;align-items:center;justify-content:center}
+#game{position:relative;width:min(100vw,177.78vh);aspect-ratio:16/9;background:#000;overflow:hidden;user-select:none;-webkit-user-select:none;container-type:size}
+#cv{position:absolute;left:0;top:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;background:#000}
+.px{font-family:'Press Start 2P',ui-monospace,Menlo,monospace}
+
+/* HUD */
+#hud{position:absolute;left:2cqw;top:2cqh;width:29cqw;padding:.8cqw 1cqw;background:rgba(20,18,31,.85);border:.4cqw solid var(--cream);font-size:2.1cqw;line-height:1;display:none;z-index:5;white-space:nowrap}
+#hud .lb{letter-spacing:.05em;margin-bottom:.5cqw;display:flex;justify-content:space-between}
+#bar{height:1.8cqw;background:#3a3558;border:.3cqw solid #0b0a14;position:relative}
+#fill{height:100%;width:100%;background:var(--green);transition:width .5s steps(10),background .3s}
+#delta{position:absolute;right:0;top:-.2cqw;font-weight:bold;opacity:0;pointer-events:none}
+#delta.go{animation:fl 1.1s ease-out}
+@keyframes fl{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-3cqw)}}
+#hud.shake{animation:sh .35s}
+@keyframes sh{20%{transform:translateX(-.8cqw)}40%{transform:translateX(.8cqw)}60%{transform:translateX(-.5cqw)}80%{transform:translateX(.5cqw)}}
+#flash{position:absolute;inset:0;background:#ef476f;opacity:0;pointer-events:none;z-index:4}
+#flash.go{animation:fs .4s}
+@keyframes fs{0%{opacity:.35}100%{opacity:0}}
+
+/* dialog */
+#dlg{position:absolute;left:2.5cqw;right:2.5cqw;bottom:3cqh;height:35cqh;background:var(--panel);border:.55cqw solid var(--cream);box-shadow:0 0 0 .5cqw #0b0a14,inset 0 0 0 .4cqw #4a4573;padding:4.6cqh 2.4cqw 1.2cqh;z-index:6;display:none}
+#nm{position:absolute;top:-4.2cqh;left:2cqw;padding:.5cqh 1.6cqw .3cqh;border:.45cqw solid var(--cream);box-shadow:0 0 0 .4cqw #0b0a14;font-size:3.1cqw;line-height:1.1;color:#fff;text-shadow:.2cqw .2cqw 0 rgba(0,0,0,.6);display:none}
+#txt{font-size:2.9cqw;line-height:1.12;height:100%;overflow-y:auto;scrollbar-width:none}
+#txt.thought{font-style:italic;color:#c9c6ee}
+#txt.narr{font-style:italic;color:#e8dfb8;text-align:center}
+#txt.act{color:#a8e6cf}
+#nxt{position:absolute;right:1.6cqw;bottom:.6cqh;font-size:3cqw;color:var(--gold);animation:bl .8s steps(2) infinite;display:none}
+@keyframes bl{50%{opacity:0}}
+#ch{position:absolute;inset:1.4cqh 2cqw 1cqh;display:none;overflow:auto}
+#chT{font-size:2.7cqw;color:var(--gold);margin-bottom:.6cqh;line-height:1}
+.mb{display:block;width:100%;text-align:left;font:inherit;font-size:3.3cqw;line-height:1.05;color:var(--cream);background:#241f3d;border:.4cqw solid #6c6a8f;padding:.5cqh 1.4cqw;margin:.5cqh 0;cursor:pointer}
+.mb.sel{border-color:var(--gold);color:var(--gold);background:#33295c}
+.mb::before{content:'\00a0\00a0';}
+.mb.sel::before{content:'▶ ';}
+
+/* overlays */
+.ov{position:absolute;inset:0;display:none;z-index:8}
+#card{background:#000;z-index:9;align-items:center;justify-content:center;flex-direction:column;text-align:center;opacity:0;transition:opacity .35s;pointer-events:none}
+#card.on{opacity:1;display:flex}
+#card .a{font-size:3.4cqw;color:var(--gold)}
+#card .b{font-size:4.4cqw;margin-top:2cqh}
+#title{background:linear-gradient(180deg,rgba(11,10,20,.55),rgba(11,10,20,.82));flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#title h1{margin:0;font-size:7.2cqw;line-height:1.25;color:var(--gold);text-shadow:.6cqw .6cqw 0 #7b2cbf,1.1cqw 1.1cqw 0 #000}
+#title h1 span{display:inline-block;color:var(--red);animation:bob 1s steps(2) infinite}
+@keyframes bob{50%{transform:translateY(-.8cqw)}}
+#title .sub{font-size:3cqw;margin:2cqh 8cqw 3cqh;color:#d9d4f2;line-height:1}
+#tmenu{width:38cqw}
+#tmenu .mb{text-align:center;font-size:3.6cqw}
+#tmenu .mb::before{content:''}
+#tmenu .mb.sel::before{content:'▶ '}
+#tfoot{position:absolute;bottom:2cqh;font-size:2.4cqw;color:#9b97c4}
+.panel{background:rgba(11,10,20,.92);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 6cqw}
+.panel h2{margin:0 0 2cqh;font-size:4.2cqw;color:var(--gold);line-height:1.2}
+.panel p{margin:.6cqh 0;font-size:3cqw;line-height:1.08;max-width:80cqw}
+.panel .pm{width:40cqw;margin-top:2cqh}
+.panel .pm .mb{text-align:center}
+.panel .pm .mb::before{content:''}.panel .pm .mb.sel::before{content:'▶ '}
+#end h2{font-size:5cqw}
+#end .quote{font-style:italic;color:#c9c6ee}
+#end .st{color:var(--green)}
+
+@media (orientation:portrait){
+  html,body{align-items:flex-start}
+  #game{width:100vw;height:100vh;height:100dvh;aspect-ratio:auto}
+  #cv{height:auto;aspect-ratio:16/9;width:100%}
+  #hud{width:56cqw;font-size:3.2cqw;padding:1.2cqw 1.6cqw;left:2cqw;top:2cqw}
+  #bar{height:2.8cqw}
+  #dlg{left:2.5cqw;right:2.5cqw;top:calc(56.25cqw + 9cqw);bottom:2.5cqw;height:auto;padding:5.2cqw 3.6cqw 3.2cqw}
+  #nm{font-size:5cqw;top:-6.2cqw;left:3cqw;padding:.8cqw 2.4cqw .4cqw;border-width:.7cqw}
+  #txt{font-size:5.6cqw;overflow-y:auto}
+  #nxt{font-size:5cqw;right:3cqw;bottom:1cqw}
+  #ch{inset:2.4cqw 3.4cqw}
+  #chT{font-size:4.6cqw}
+  .mb{font-size:5.4cqw;padding:1.2cqw 2cqw;margin:1.3cqw 0;border-width:.6cqw}
+  #card .a{font-size:5.4cqw}#card .b{font-size:7cqw}
+  #title h1{font-size:10.5cqw}
+  #title .sub{font-size:5cqw}
+  #tmenu{width:68cqw}#tmenu .mb{font-size:6cqw}
+  #tfoot{font-size:3.8cqw}
+  .panel h2{font-size:7cqw}.panel p{font-size:4.6cqw;max-width:90cqw}.panel .pm{width:70cqw}
+  #end h2{font-size:8cqw}
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <canvas id="cv"></canvas>
+  <div id="flash"></div>
+  <div id="hud"><div class="lb"><span>KEPERCAYAAN DIRI</span><span id="pcn">100</span></div><div id="bar"><div id="fill"></div><div id="delta"></div></div></div>
+  <div id="dlg"><div id="nm"></div><div id="txt"></div><div id="nxt">▼</div><div id="ch"><div id="chT"></div><div id="chL"></div></div></div>
+  <div id="card" class="ov"><div class="a px"></div><div class="b"></div></div>
+  <div id="title" class="ov">
+    <h1 class="px">TANDA<br>TANYA<span>?</span></h1>
+    <div class="sub">Cerita interaktif tentang remaja yang rela membohongi dirinya sendiri, karena tidak ingin dianggap berbeda.</div>
+    <div id="tmenu"></div>
+    <div id="tfoot">Klik / Enter / Spasi untuk lanjut</div>
+  </div>
+  <div id="help" class="ov panel"><h2 class="px">CARA MAIN</h2>
+    <p>Baca dialog dengan klik layar, Enter, atau Spasi.</p>
+    <p>Saat ada pilihan: ketuk pilihan, atau pakai panah &uarr; &darr; + Enter, atau tekan angka 1, 2.</p>
+    <p>Perhatikan bar KEPERCAYAAN DIRI Andi. Setiap pilihanmu mengubah ceritanya.</p>
+    <p>Ada lebih dari satu ending. Coba semuanya!</p>
+    <div class="pm" id="hmenu"></div></div>
+  <div id="end" class="ov panel"><h2 class="px" id="eT"></h2><p id="eP" class="quote"></p><p id="eS"></p><p id="eF" class="st"></p><div class="pm" id="emenu"></div></div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const FAST = /[?&]fast/.test(location.search);
+const W = 160, H = 90;
+const cv = $('cv'), ctx = cv.getContext('2d');
+cv.width = W; cv.height = H;
+
+/* ================= PIXEL ART ================= */
+const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
+const disc = (cx, cy, r, c) => { ctx.fillStyle = c; for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x*x + y*y <= r*r) ctx.fillRect(cx + x, cy + y, 1, 1); };
+const bands = (cols, y0, y1) => { const h = (y1 - y0) / cols.length; cols.forEach((c, i) => R(0, y0 + i*h, W, Math.ceil(h) + 1, c)); };
+
+function bgGerbang(late) {
+  bands(late ? ['#3d2c6b','#6a3d7a','#a14a76','#d9605f','#f08a4b','#f7b267'] : ['#79c7f0','#9ad6f5','#bde6f7','#f7d9a0','#f7b267'], 0, 52);
+  disc(late ? 120 : 126, late ? 40 : 30, 6, late ? '#ffd9a0' : '#fff3b0');
+  R(8, 24, 74, 30, '#cbb89a'); R(6, 19, 78, 6, '#8b4a3b'); R(6, 25, 78, 1, '#6e382c');
+  for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) R(12 + i*14, 29 + j*12, 9, 7, late ? '#ffcf70' : '#7fb6d9');
+  R(40, 44, 12, 10, '#5a3e2b'); R(43, 47, 1, 1, '#ffd166');
+  R(44, 8, 1, 12, '#555'); R(45, 8, 8, 5, '#ef476f');
+  for (let x = 96; x < 158; x += 4) R(x, 40, 1, 16, '#44425a');
+  R(94, 36, 66, 2, '#44425a'); R(94, 52, 66, 2, '#44425a');
+  R(92, 32, 5, 24, '#8d8d9b'); R(157, 32, 3, 24, '#8d8d9b');
+  [[4,44],[88,40]].forEach(([x,y]) => { R(x+3, y+6, 3, 10, '#5a3e2b'); R(x, y, 9, 8, '#2d6a4f'); R(x+1, y-3, 7, 4, '#40916c'); });
+  R(0, 52, W, 38, '#7a7f6a');
+  R(0, 52, W, 3, '#b8b5a8');
+  for (let x = 0; x < W; x += 16) R(x, 74, 8, 2, '#c9c7b8');
+  R(0, 62, W, 1, '#6c705d');
+}
+function bgKelas() {
+  R(0, 0, W, 52, '#cfe0d6'); R(0, 46, W, 6, '#a9bfb2');
+  R(38, 6, 66, 32, '#8b5e3c'); R(40, 8, 62, 28, '#2f4a3a');
+  R(46, 14, 24, 1, '#cfe0d6'); R(46, 19, 36, 1, '#cfe0d6'); R(46, 24, 18, 1, '#cfe0d6'); R(86, 26, 8, 2, '#ffd166');
+  R(40, 36, 62, 2, '#6e4b2e');
+  R(6, 8, 26, 30, '#8b5e3c'); R(8, 10, 22, 26, '#9ad1ff'); R(18, 10, 2, 26, '#8b5e3c'); R(8, 22, 22, 2, '#8b5e3c'); R(10, 12, 5, 8, '#c8ecff');
+  R(116, 8, 12, 12, '#f6efd9'); R(117, 9, 10, 10, '#fff'); R(121, 11, 1, 5, '#222'); R(121, 15, 4, 1, '#222');
+  R(132, 10, 22, 16, '#e9c46a'); R(134, 12, 8, 4, '#ef476f'); R(144, 12, 8, 8, '#4cc9f0');
+  R(0, 52, W, 38, '#b98b5a');
+  for (let y = 58; y < H; y += 7) R(0, y, W, 1, '#9c7447');
+  for (let x = 0; x < W; x += 21) R(x, 52, 1, 38, '#a47a4c');
+  for (const x of [6, 60, 112]) { R(x, 74, 36, 5, '#8a5a32'); R(x + 2, 79, 3, 8, '#5b3b20'); R(x + 31, 79, 3, 8, '#5b3b20'); }
+}
+function bgKamar(night, t) {
+  R(0, 0, W, 52, night ? '#b7a77e' : '#e6d5a8'); R(0, 46, W, 6, night ? '#8f815d' : '#c9b887');
+  R(50, 8, 30, 28, '#8b5e3c'); R(52, 10, 26, 24, night ? '#14143a' : '#9ad1ff'); R(64, 10, 2, 24, '#8b5e3c'); R(52, 21, 26, 2, '#8b5e3c');
+  if (night) { disc(58, 17, 3, '#fff3b0'); R(56, 16, 2, 2, '#14143a'); [[70,14],[73,28],[56,29],[68,18]].forEach(([x,y],i) => { if ((Math.floor(t/500)+i)%3) R(x, y, 1, 1, '#fff'); }); }
+  else { R(54, 12, 5, 8, '#c8ecff'); }
+  R(100, 8, 42, 36, '#6b4b2a'); R(102, 10, 38, 32, '#a9d6e5'); R(106, 12, 4, 26, '#d6f0f7'); R(114, 12, 2, 26, '#d6f0f7');
+  R(16, 10, 18, 24, '#ef476f'); R(18, 12, 14, 20, '#ffd166'); R(22, 16, 6, 8, '#7b2cbf');
+  R(0, 52, W, 38, '#bc8a5f');
+  for (let y = 58; y < H; y += 7) R(0, y, W, 1, '#9f7249');
+  R(36, 66, 90, 18, '#9b5de5'); R(40, 69, 82, 12, '#b983ff');
+  R(6, 34, 12, 18, '#2b2b3a'); R(9, 38, 6, 6, '#555'); R(9, 46, 6, 3, '#555');
+  R(140, 36, 14, 16, '#7a4e2d'); R(144, 30, 6, 6, '#ffd166');
+  if (night) { R(0, 0, W, H, 'rgba(10,10,50,.5)'); R(138, 24, 18, 18, 'rgba(255,209,102,.18)'); }
+}
+function bgNongkrong(t) {
+  bands(['#4a3f87','#6a4c93','#a14a76','#d9605f','#f08a4b'], 0, 52);
+  R(0, 38, W, 14, '#3b3a66'); for (let x = 0; x < W; x += 20) R(x, 34 + (x % 40 ? 2 : 0), 20, 6, '#3b3a66');
+  R(88, 18, 62, 34, '#a98467'); R(84, 12, 70, 8, '#6c3b2a'); R(84, 20, 70, 1, '#4a2a1d');
+  R(92, 28, 22, 12, '#ffd166'); R(96, 30, 14, 8, '#ef476f'); R(122, 30, 20, 22, '#5a3e2b');
+  for (let x = 88; x < 150; x += 6) R(x, 22 + ((x/6)|0) % 2, 2, 2, (Math.floor(t/400) + (x/6|0)) % 2 ? '#fff3b0' : '#ffd166');
+  [[6,24],[62,28]].forEach(([x,y]) => { R(x+4, y+14, 4, 14, '#4a2f1d'); R(x, y, 12, 10, '#2d6a4f'); R(x+2, y-5, 8, 6, '#40916c'); });
+  R(0, 52, W, 38, '#4f772d'); R(0, 56, W, 34, '#5d8a3a');
+  R(0, 62, W, 10, '#b09a6d');
+  R(20, 52, 40, 3, '#6b4423'); R(22, 55, 3, 5, '#4a2f1d'); R(55, 55, 3, 5, '#4a2f1d');
+}
+function drawBG(t) {
+  switch (st.bg) {
+    case 'gerbang': bgGerbang(false); break;
+    case 'gerbang2': bgGerbang(true); break;
+    case 'kelas': bgKelas(); break;
+    case 'kamar': bgKamar(false, t); break;
+    case 'malam': bgKamar(true, t); break;
+    case 'nongkrong': bgNongkrong(t); break;
+    default: R(0, 0, W, H, '#000');
+  }
+}
+
+/* karakter */
+const CHR = {
+  Andi:  { skin:'#f1c27d', hair:'#1d1d2b', col:'#3a86ff' },
+  Farel: { skin:'#d9a066', hair:'#3a2614', col:'#e63946' },
+  Deva:  { skin:'#e0aa78', hair:'#000000', col:'#c9a227' },
+  Zufar: { skin:'#c68642', hair:'#15151c', col:'#7b2cbf' },
+  Dani:  { skin:'#f3cf9b', hair:'#6b4226', col:'#e07a2f' },
+};
+// Andi memakai baju santai hanya saat di rumah; semua yang lain selalu berseragam
+const casual = name => name === 'Andi' && (st.bg === 'kamar' || st.bg === 'malam');
+function drawChar(name, cx, feet, speaking, t) {
+  const c = CHR[name]; if (!c) return;
+  const home = casual(name), skin = c.skin, hair = c.hair;
+  const bob = speaking ? (Math.floor(t / 170) % 2) : 0;
+  const x = Math.round(cx - 8), y = feet - 28 - bob;
+  R(x + 1, feet, 14, 2, 'rgba(0,0,0,.28)');
+
+  // ---- kaki
+  if (home) {                                   // celana pendek + sandal
+    R(x + 4, y + 21, 8, 3, '#2b2d42'); R(x + 7, y + 22, 2, 2, 'rgba(0,0,0,.25)');
+    R(x + 4, y + 24, 3, 2, skin); R(x + 9, y + 24, 3, 2, skin);
+    R(x + 4, y + 26, 4, 2, '#e9c46a'); R(x + 8, y + 26, 4, 2, '#e9c46a');
+  } else {                                      // celana seragam abu-abu + sepatu hitam
+    R(x + 4, y + 21, 8, 5, '#8d8f9c'); R(x + 7, y + 23, 2, 3, 'rgba(0,0,0,.18)'); R(x + 4, y + 21, 8, 1, '#3a3a46');
+    R(x + 4, y + 26, 4, 2, '#16161d'); R(x + 8, y + 26, 4, 2, '#16161d');
+  }
+
+  // ---- badan + lengan pendek
+  const shirt = home ? '#3a86ff' : '#f5f5f2';
+  R(x + 3, y + 12, 10, 9, shirt);
+  R(x + 1, y + 12, 2, 4, shirt); R(x + 13, y + 12, 2, 4, shirt);
+  R(x + 1, y + 16, 2, 6, skin);  R(x + 13, y + 16, 2, 6, skin);
+  R(x + 3, y + 20, 10, 1, 'rgba(0,0,0,.12)');
+  if (home) {
+    R(x + 3, y + 12, 10, 1, '#6aa6ff'); R(x + 6, y + 12, 4, 1, skin);
+    R(x + 6, y + 15, 4, 3, '#ffd166');                       // gambar di kaos
+  } else {
+    R(x + 3, y + 12, 10, 1, '#d8d8d2'); R(x + 6, y + 12, 4, 1, skin);
+    R(x + 7, y + 13, 2, 5, '#9d1f2a');                       // dasi
+    R(x + 4, y + 15, 2, 2, '#2b6cb0'); R(x + 4, y + 15, 2, 1, '#ffd166');   // badge sekolah
+  }
+
+  // ---- kepala
+  R(x + 7, y + 11, 2, 1, skin);
+  R(x + 4, y + 3, 8, 8, skin);
+  R(x + 3, y + 6, 1, 2, skin); R(x + 12, y + 6, 1, 2, skin);
+
+  // ---- rambut (beda tiap karakter)
+  switch (name) {
+    case 'Andi':      // belah tengah
+      R(x + 3, y + 0, 10, 3, hair);
+      R(x + 3, y + 3, 3, 4, hair); R(x + 10, y + 3, 3, 4, hair);
+      R(x + 6, y + 3, 1, 2, hair); R(x + 9, y + 3, 1, 2, hair);
+      R(x + 7, y + 0, 2, 3, '#4b4b6e'); R(x + 7, y + 1, 2, 2, skin);   // garis belahan
+      break;
+    case 'Deva':      // botak
+      R(x + 5, y + 2, 6, 1, skin); R(x + 6, y + 1, 4, 1, skin);
+      R(x + 7, y + 2, 2, 1, '#f6dcb8'); R(x + 5, y + 5, 3, 1, '#2a1c10'); R(x + 9, y + 5, 3, 1, '#2a1c10');
+      break;
+    case 'Zufar':     // rambut preman: gondrong acak-acakan
+      R(x + 2, y - 1, 12, 4, hair);
+      R(x + 3, y - 2, 2, 1, hair); R(x + 7, y - 3, 3, 2, hair); R(x + 11, y - 2, 2, 1, hair);
+      R(x + 2, y + 3, 2, 9, hair); R(x + 12, y + 3, 2, 9, hair);
+      R(x + 4, y + 3, 2, 2, hair); R(x + 9, y + 3, 3, 1, hair); R(x + 7, y + 3, 1, 1, hair);
+      R(x + 5, y + 6, 3, 1, hair); R(x + 9, y + 6, 3, 1, hair);          // alis tajam
+      R(x + 10, y + 8, 1, 2, '#b5554b');                                // bekas luka
+      R(x + 3, y + 9, 1, 1, '#ffd166');                                 // anting
+      break;
+    case 'Farel':     // keriting
+      R(x + 2, y + 0, 12, 4, hair);
+      R(x + 3, y - 1, 2, 1, hair); R(x + 6, y - 2, 4, 2, hair); R(x + 11, y - 1, 2, 1, hair);
+      R(x + 2, y + 4, 2, 3, hair); R(x + 12, y + 4, 2, 3, hair);
+      R(x + 4, y + 4, 2, 1, hair); R(x + 7, y + 4, 2, 1, hair); R(x + 10, y + 4, 2, 1, hair);
+      for (const [a, b] of [[4, 1], [8, 0], [11, 2], [6, 3], [9, -1], [3, 5], [13, 5]]) R(x + a, y + b, 1, 1, '#6b4a2a');
+      break;
+    case 'Dani':      // rapi, pakai kacamata
+      R(x + 3, y + 0, 10, 3, hair); R(x + 3, y + 3, 1, 3, hair); R(x + 12, y + 3, 1, 3, hair);
+      R(x + 4, y + 3, 5, 1, hair);
+      break;
+  }
+
+  // ---- mata
+  if (name === 'Dani') {                          // kacamata
+    for (const lx of [5, 9]) R(x + lx, y + 6, 3, 4, 'rgba(190,225,255,.7)');
+    R(x + 6, y + 7, 1, 2, '#1b1b2a'); R(x + 10, y + 7, 1, 2, '#1b1b2a');
+    for (const lx of [5, 9]) { R(x + lx, y + 6, 3, 1, '#222'); R(x + lx, y + 9, 3, 1, '#222'); R(x + lx, y + 6, 1, 4, '#222'); R(x + lx + 2, y + 6, 1, 4, '#222'); }
+    R(x + 8, y + 7, 1, 1, '#222');
+  } else {
+    R(x + 6, y + 7, 1, 2, '#1b1b2a'); R(x + 9, y + 7, 1, 2, '#1b1b2a');
+  }
+  // ---- mulut
+  if (speaking && (Math.floor(t / 130) % 2)) R(x + 7, y + 10, 2, 2, '#7a2230'); else R(x + 7, y + 10, 2, 1, '#9b5a45');
+  // ---- kartu di tangan Dani
+  if (name === 'Dani' && st.cards === 'hand') { R(x + 13, y + 18, 4, 5, '#fff'); R(x + 14, y + 19, 2, 3, '#3a86ff'); R(x + 13, y + 18, 4, 1, '#ffd166'); }
+  // ---- penanda yang sedang bicara
+  if (speaking) { const u = bob ? 1 : 0; R(x + 7, y - 7 - u, 2, 1, '#ffd166'); R(x + 6, y - 8 - u, 4, 1, '#ffd166'); }
+}
+const CARDCOL = ['#ffd166', '#4cc9f0', '#ef476f', '#fff', '#06d6a0', '#f4a261'];
+function drawCards(x, feet) {
+  const P = [[-18,2],[-11,6],[-5,0],[9,4],[16,1],[22,6],[2,8]];
+  P.forEach(([dx, dy], i) => {
+    const ruin = st.cards === 'ruined';
+    R(x + dx, feet + dy, ruin ? 3 : 4, ruin ? 2 : 3, ruin ? '#6a6a78' : CARDCOL[i % CARDCOL.length]);
+    if (!ruin) R(x + dx + 1, feet + dy + 1, 2, 1, 'rgba(0,0,0,.25)');
+  });
+}
+
+/* ================= GAMBAR KHUSUS (CG) ================= */
+const clamp01 = v => Math.max(0, Math.min(1, v));
+function note(x, y, c) { R(x, y + 4, 3, 2, c); R(x + 2, y, 1, 5, c); R(x + 3, y, 2, 1, c); }
+
+// Andi memutar kaset di pemutar musik
+function cgKaset(tt) {
+  R(0, 0, W, 54, '#e6d5a8');
+  for (let x = 0; x < W; x += 10) R(x, 0, 1, 54, '#dccb9b');
+  R(0, 54, W, 36, '#bc8a5f');
+  for (let y = 60; y < H; y += 7) R(0, y, W, 1, '#9f7249');
+  // meja
+  R(14, 53, 132, 5, '#7a4e2d'); R(14, 53, 132, 1, '#9a6a3f'); R(20, 58, 6, 32, '#5f3b20'); R(134, 58, 6, 32, '#5f3b20');
+  R(30, 58, 100, 1, 'rgba(0,0,0,.18)');
+  // badan pemutar
+  R(34, 22, 92, 31, '#2b2d3a'); R(34, 22, 92, 2, '#4a4d63'); R(34, 51, 92, 2, '#1a1b24');
+  R(58, 16, 44, 6, '#1d1e29'); R(62, 18, 36, 2, '#555a70');
+  const play = tt > 1700;
+  const pulse = play && (Math.floor(tt / 180) % 2);
+  for (const cx of [50, 110]) {                    // speaker
+    disc(cx, 38, 11, '#14141c'); disc(cx, 38, 8, '#262735'); disc(cx, 38, pulse ? 4 : 3, '#4d5068'); disc(cx, 38, 1, '#14141c');
+    if (pulse) disc(cx, 38, 10, 'rgba(255,255,255,.07)');
+  }
+  // deck kaset
+  R(64, 25, 32, 22, '#555a70'); R(65, 26, 30, 20, '#0e0e14');
+  // tombol
+  R(65, 48, 5, 3, '#c0c0c8'); R(72, 48, 5, 3, '#c0c0c8'); R(79, 48, 5, 3, play ? '#06d6a0' : '#c0c0c8'); R(86, 48, 5, 3, '#ef476f');
+  R(98, 27, 3, 3, play ? '#06d6a0' : '#44475a');
+  // kaset: turun dari atas ke dalam deck
+  const p = clamp01(tt / 1300), e = 1 - (1 - p) * (1 - p);
+  const cy = Math.round(-14 + e * 43);              // -14 -> 29
+  const cx = 68;
+  R(cx, cy, 24, 14, '#d9d4c4'); R(cx, cy, 24, 1, '#fff'); R(cx, cy + 13, 24, 1, '#a39e8e');
+  R(cx + 2, cy + 1, 20, 6, '#ffd166'); R(cx + 4, cy + 2, 8, 1, '#ef476f'); R(cx + 4, cy + 4, 12, 1, '#7b2cbf');
+  R(cx + 3, cy + 8, 18, 5, '#2b2b36');
+  const spin = play ? (Math.floor(tt / 110) % 2) : 0;
+  for (const rx of [cx + 7, cx + 17]) {
+    disc(rx, cy + 10, 2, '#e8e8e8');
+    if (spin) { R(rx - 2, cy + 8, 5, 1, '#444'); R(rx, cy + 8, 1, 5, '#444'); } else { R(rx - 1, cy + 9, 3, 1, '#444'); R(rx, cy + 8, 1, 5, '#444'); }
+  }
+  // tangan Andi memegang kaset (lengan kaos biru)
+  const hand = tt < 1300 ? 0 : tt < 2000 ? (tt - 1300) / 700 : 1;
+  if (hand < 1) {
+    const hy = cy - 8 - Math.round(hand * 30);
+    R(cx + 26, hy - 30, 14, 44, '#3a86ff'); R(cx + 26, hy - 30, 3, 44, '#2a66cc');   // lengan baju
+    R(cx + 22, hy + 6, 18, 9, '#f1c27d');                                           // lengan bawah
+    R(cx + 18, hy + 8, 6, 4, '#f1c27d');                                            // jempol
+    R(cx + 20, hy + 13, 8, 3, '#f1c27d');                                           // jari
+    R(cx + 17, hy + 12, 2, 2, '#d9a55f');
+  }
+  // not musik melayang
+  if (play) for (let i = 0; i < 5; i++) {
+    const ph = ((tt - 1700) / 2200 + i / 5) % 1;
+    note(Math.round(26 + i * 28 + Math.sin(ph * 7 + i) * 5), Math.round(17 - ph * 17), ['#ff9ecd', '#9ad1ff', '#ffd166', '#b983ff', '#06d6a0'][i]);
+  }
+}
+
+// Farel menginjak kartu Dani
+function cgInjak(tt) {
+  R(0, 0, W, 34, '#cfe0d6'); R(0, 31, W, 4, '#a9bfb2');
+  R(0, 35, W, 55, '#b98b5a');
+  for (let y = 41; y < H; y += 8) R(0, y, W, 1, '#9c7447');
+  for (let x = 0; x < W; x += 24) R(x + ((x / 24) % 2) * 9, 35, 1, 55, '#a47a4c');
+  const flat = (x, y, c, big) => {               // kartu tergeletak (foreshortened)
+    const w = big ? 20 : 15, h = big ? 9 : 7;
+    R(x, y, w, h, '#fff'); R(x + 1, y + 1, w - 2, h - 2, c);
+    R(x + 3, y + 2, 4, h - 4, '#fff3b0'); R(x + 4, y + 3, 1, 1, '#222'); R(x + w - 5, y + 2, 2, 2, 'rgba(255,255,255,.7)');
+  };
+  const cols = ['#ffd166', '#4cc9f0', '#ef476f', '#06d6a0', '#f4a261', '#b983ff'];
+  [[8, 40], [30, 52], [112, 42], [132, 53], [100, 56], [14, 55], [142, 40]].forEach(([x, y], i) => flat(x, y, cols[i % 6], false));
+
+  const hit = 700, hitDone = tt >= hit;
+  const p = clamp01(tt / hit), drop = Math.round((1 - p * p) * -26);
+  const wig = hitDone ? (Math.floor((tt - hit) / 140) % 2) : 0;
+  const tx = 64, ty = 49;
+  // kartu yang diinjak
+  if (!hitDone) flat(tx + 6, ty, '#ffd166', true);
+  else {
+    R(tx + 6, ty, 20, 9, '#7a7a88'); R(tx + 7, ty + 1, 18, 7, '#9a9aa8');
+    R(tx + 9, ty + 2, 3, 1, '#555'); R(tx + 14, ty + 4, 6, 1, '#555'); R(tx + 11, ty + 6, 8, 1, '#555'); R(tx + 22, ty + 2, 1, 4, '#555');
+    R(tx + 24, ty, 4, 3, '#fff'); R(tx + 25, ty - 1, 2, 1, '#ffd166');           // sobekan
+  }
+  // bayangan + sepatu + kaus kaki + celana
+  R(tx - 4 + wig, ty + 6, 44, 3, 'rgba(0,0,0,.28)');
+  const sx = tx + wig, sy = 36 + drop;
+  R(sx + 20, sy - 36, 18, 34, '#8d8f9c'); R(sx + 20, sy - 36, 3, 34, '#6e7080');   // celana
+  R(sx + 22, sy - 2, 14, 12, '#f5f5f2');                                            // kaus kaki
+  R(sx, sy + 8, 40, 5, '#16161d'); R(sx + 2, sy + 4, 30, 5, '#16161d'); R(sx + 24, sy + 8, 14, 5, '#16161d');
+  R(sx + 4, sy + 5, 10, 2, '#3a3a48');                                              // kilap
+  R(sx, sy + 13, 40, 2, '#e6e6e0');                                                 // sol
+  // efek benturan
+  if (hitDone && tt < hit + 500) {
+    const k = Math.floor((tt - hit) / 120);
+    const pts = [[-8, -3], [34, -4], [-4, 6], [38, 4], [14, -10], [26, -9]];
+    pts.forEach(([dx, dy], i) => { const m = k + 1; R(tx + 13 + dx * m / 2, ty + 4 + dy * m / 2, 2, 2, i % 2 ? '#ffd166' : '#fff'); });
+  }
+  // tangan Dani meraih dari kiri, berhenti & gemetar
+  const reach = clamp01((tt - 250) / 800);
+  const hx = Math.round(-22 + reach * 46 + (hitDone ? Math.sin(tt / 60) : 0));
+  R(hx - 22, 50, 28, 7, '#f3cf9b'); R(hx - 22, 49, 12, 9, '#f5f5f2');             // lengan + seragam
+  R(hx + 6, 49, 7, 9, '#f3cf9b'); R(hx + 13, 50, 3, 2, '#f3cf9b'); R(hx + 13, 53, 3, 2, '#f3cf9b'); R(hx + 12, 56, 3, 2, '#f3cf9b');
+}
+
+function drawCG(now) {
+  const tt = now - st.cgT0;
+  if (st.cg === 'kaset') cgKaset(tt); else if (st.cg === 'injak') cgInjak(tt);
+}
+
+/* ================= STATE ================= */
+const st = { pc: 100, bg: 'gerbang', cast: [], speakers: [], cards: 'hand', mode: 'menu', cg: null, cgT0: 0, ejek: false };
+const FEET = 54;
+function castX(i, n) { return Math.round((i + 1) * W / (n + 1)); }
+let T0 = performance.now();
+function frame(now) {
+  const t = now - T0;
+  ctx.clearRect(0, 0, W, H);
+  if (st.cg) { drawCG(now); requestAnimationFrame(frame); return; }
+  drawBG(t);
+  const n = st.cast.length;
+  let daniX = null;
+  st.cast.forEach((nm, i) => { const x = castX(i, n); if (nm === 'Dani') daniX = x; });
+  if (daniX !== null && (st.cards === 'floor' || st.cards === 'ruined')) drawCards(daniX, FEET + 1);
+  st.cast.forEach((nm, i) => drawChar(nm, castX(i, n), FEET, st.speakers.includes(nm), t));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ================= CERITA ================= */
+const S = (w, x) => ({ t: 'say', w, x });
+const Hh = x => ({ t: 'hati', x });
+const N = x => ({ t: 'narr', x });
+const A = x => ({ t: 'act', x });
+const PC = n => ({ t: 'pc', n });
+const SC = (a, b, bg, cast) => ({ t: 'scene', a, b, bg, cast });
+const ST = (bg, cast) => ({ t: 'stage', bg, cast });
+const SET = (k, v) => ({ t: 'set', k, v });
+const IF = (k, a, b) => ({ t: 'ifv', k, a, b });
+const CG = id => ({ t: 'cg', id });
+const BEAT = ms => ({ t: 'beat', ms });
+const CH = (title, opts) => ({ t: 'choice', title, opts });
+const GO = to => ({ t: 'go', to });
+const END = (name, good) => ({ t: 'end', name, good });
+const AND = ['Andi'];
+const FOUR = ['Andi', 'Farel', 'Deva', 'Zufar'];
+const FIVE = ['Andi', 'Farel', 'Deva', 'Zufar', 'Dani'];
+const FDZ = 'Farel, Deva, Zufar';
+
+const BL = {
+  /* ===== SCENE 1 - 3 ===== */
+  start: [
+    SC('Scene 1', 'Pulang sekolah', 'gerbang', FOUR),
+    S('Andi', 'Gw pulang duluan ya teman-teman.'),
+    S(FDZ, 'Yok, hati-hati ya Di.'),
+    SC('Scene 2', 'Rumah Andi', 'kamar', AND),
+    S('Andi', 'Akhirnya sampai rumah juga.'),
+    CG('kaset'),
+    S('Andi', 'Lanjutin latihan dance kemarin ah, lagu kemarin juga belum benar-benar lancar, yok gaskan.'),
+    BEAT(2800),
+    SC('Scene 3', 'Keesokan harinya di sekolah', 'kelas', FIVE),
+    N('Andi baru sampai ke depan kelas dan mendengar teman-temannya sedang mengobrol.'),
+    S('Farel', 'Bocah lu yak, Dan. Jaman sekarang mah mana ada mah cowok mainan kartu gambar kartun gak jelas kayak gini.'),
+    S('Deva', 'Iya tuh, bocah mah kerjaannya main kartu ya, hahaha.'),
+    S('Andi', 'Apaan nih, masih pagi udah rame bener?'),
+    S('Zufar', 'Ini, Di, si Dani. Udah gede ya, masih aja main kartu kek gini, mana kartunya gambar kartun-kartun gini lagi, bocah banget ya kan.'),
+    PC(-10),
+    CH('Pilih respons Andi', [{ l: 'Ikut mengejek Dani.', go: 'c3a' }, { l: 'Diam aja.', go: 'c3b' }]),
+  ],
+  c3a: [
+    PC(-10), SET('ejek', true),
+    S('Andi', 'Hahaha....'),
+    S('Andi', 'Pantesan aja gak punya teman, orang kesukaannya aja kayak gini.'),
+    S('Dani', '...'),
+    S('Deva', 'Hahaha, jahat bet lu Di, hahaha.'),
+    GO('c3c'),
+  ],
+  c3b: [
+    PC(-5), SET('ejek', false),
+    S('Andi', 'Oh...'),
+    S('Dani', '...'),
+    GO('c3c'),
+  ],
+  c3c: [
+    S('Farel', 'Sini semua kartu lu Dan!'),
+    S('Dani', 'Jangan lah bro, ini kan kartu gw, kalian gak boleh sembarangan ngerampas gitu.'),
+    S('Zufar', 'Wah, udah berani ni bocah ma lu Rel, langsung rampas aja udah!'),
+    PC(-10),
+    S('Deva', 'Hahaha, cukup gak sih weh, keburu nangis entar anaknya.'),
+    S('Farel dan Zufar', 'Hahaha.'),
+    IF('ejek', 'c3d1', 'c3d2'),
+  ],
+  c3d1: [S('Andi', 'Alay bet nangis gegara ginian, hahaha.'), GO('c3e')],
+  c3d2: [S('Andi', '....'), GO('c3e')],
+  c3e: [
+    S('Farel', 'Iya juga ya, entar gw juga yang dilaporin ke guru.'),
+    S('Zufar', 'Santai aja ya Dan, kita cuman bercanda doang kok, iya kan guys?'),
+    S('Farel dan Deva', 'Betul banget tuh, hahaha.'),
+    PC(-10),
+    GO('s4'),
+  ],
+
+  /* ===== SCENE 4 ===== */
+  s4: [
+    SC('Scene 4', 'Pulang sekolah', 'gerbang2', FOUR),
+    S('Andi', 'Gw pulang duluan ya.'),
+    S('Farel', 'Eh, Di. Nongkrong dulu dah yuk, dah lama nih kita gak nongkrong berempat.'),
+    S('Deva', 'Iya nih, lu sekarang pulang duluan mulu, ada kerjaan apa sih emangnya lu di rumah?'),
+    CH('Pilih respons Andi', [{ l: 'Ikut nongkrong.', go: 's4a' }, { l: 'Gak ikut nongkrong.', go: 's4b' }]),
+  ],
+  s4a: [
+    S('Andi', 'Gw ikut dah.'),
+    ST('nongkrong', FOUR),
+    N('Andi dan teman-temannya berangkat ke tempat nongkrong.'),
+    S('Zufar', 'Kira-kira gimana ya jadinya Dani pas kita gituin?'),
+    S('Deva', 'Paling kena mental dia, terus berhenti main kartu kesayangannya dia lagi.'),
+    S('Zufar', 'Kalau semisalnya enggak?'),
+    S('Farel', 'Kita kasih paham dia ampe berhenti, hahaha.'),
+    S('Andi', 'Apa gak terlalu jahat tu? Hahaha.'),
+    S('Deva', 'Yeh, alay lu Di.'),
+    S('Zufar', 'Masa lu gak kesal liat tu anak sendiri mulu main kartu?'),
+    S('Zufar', 'Gw kasih tau ya, lu kalau udah gede ya, cari teman lah, biar relasi lu tuh bertambah.'),
+    S('Farel', 'Sok banget lu Far, relasi-relasi gitu, hahaha.'),
+    S('Zufar', 'Yang penting lu juga ada backup-an, jadi gak bakal dibully.'),
+    S('Deva', 'Kesukaannya main kartu sendiri, gimana coba mau dapat temen, yang ada dapat lawan tau, hahaha.'),
+    S('Farel', 'Jauhin aja orang-orang kayak gitu, aneh tau, wkwkwk.'),
+    S('Zufar', 'Itu dia, wkwkwk.'),
+    S('Andi', '...'),
+    PC(-10),
+    GO('s5'),
+  ],
+  s4b: [
+    Hh('Aduh, gw jawab apa ya... Kalau gw jawab mau latihan nari, yang ada gw lagi dibully kek si Dani.'),
+    PC(-10),
+    S('Andi', 'Sori banget ni bro, akhir-akhir ni gw banyak kerjaan di rumah, jadi susah mau nongkrong bareng abis pulang sekolah.'),
+    S('Deva', 'Yeh, jadi orang sibuk gini lu Di sekarang, okelah kalau gitu.'),
+    S('Zufar', 'Gapapa dah Di, kita mah santai aja ya kan, asal lu gak kek Dani aja, sibuknya gegara main kartu, hahaha.'),
+    S('Farel', 'Yaudah Di, hati-hati ya.'),
+    S('Andi', 'Hati-hati juga kalian.'),
+    GO('s5'),
+  ],
+
+  /* ===== SCENE 5 ===== */
+  s5: [
+    SC('Scene 5', 'Malam hari di rumah Andi', 'malam', AND),
+    N('Andi kembali mengingat peristiwa tadi pagi di kelas.'),
+    Hh('Kasian banget dah ya si Dani tadi, padahal dianya cuman demen main kartu doang, tapi malah dibully ma yang lain.'),
+    Hh('Kalau dia yang suka main kartu aja digituin gimana gw ya, yang suka nari.'),
+    Hh('Jujur gw juga gak terima kesukaan orang dikatain begitu, tapi kalau gw ngebela yang ada gw dijauhin ma teman-teman gw.'),
+    IF('ejek', 's5a', 's5b'),
+  ],
+  s5a: [
+    Hh('Tapi gw udah ikut ngejek.'),
+    Hh('Atau gw berhenti dance aja ya, biar gw gak dianggap aneh, gw juga gak bisa boong tiap hari.'),
+    Hh('Lagian gak asik juga punya kesukaan yang beda sendiri, mana aneh bet lagi, mana ada coba cowok yang suka nari, berhenti aja dah.'),
+    GO('s5c'),
+  ],
+  s5b: [
+    Hh('Atau gw berhenti dance aja ya, biar gw gak dianggap aneh, gw juga gak bisa boong tiap hari.'),
+    GO('s5c'),
+  ],
+  s5c: [
+    PC(-10),
+    Hh('Aduh, mending tidur aja dah.'),
+    GO('s6'),
+  ],
+
+  /* ===== SCENE 6 ===== */
+  s6: [
+    SC('Scene 6', 'Keesokan harinya di sekolah', 'kelas', FIVE),
+    S('Andi', 'Oy.'),
+    S(FDZ, 'Pagi Di.'),
+    S('Deva', 'Guys, liat noh si Dani, udah dikatain, masih aja dia bawa kartu kesukaannya ke sekolah.'),
+    S('Zufar', 'Wah, tu orang kita kasih tau biar berubah, malah masih kekeh aja jadi bocah, kasih paham tu dia Rel.'),
+    CH('Pilih respons Andi', [{ l: 'Memberanikan diri membantu Dani.', go: 's6a' }, { l: 'Diam aja.', go: 's6b' }]),
+  ],
+
+  /* ===== ENDING 1 : GOOD ===== */
+  s6a: [
+    PC(30),
+    S('Andi', 'Udah guys, biarin aja dia, lagian kesukaannya dia sendiri kok, dianya juga gak ada ngerugiin atau maksa kita buat suka ma kesukaannya dia juga.'),
+    S('Farel', 'Wah, tumben gini lu Di.'),
+    S('Deva', 'Jangan-jangan udah temenan si Andi ma Dani sekarang guys.'),
+    S('Zufar', 'Pantesan si Andi diajak nongkrong sekarang sering gak bisa, orang dia habis pulang sekolah main kartu ma Dani, hahaha.'),
+    S('Dani', '...'),
+    S('Zufar', 'Jujur ada dah lu Di, apa yang lu sebenarnya sembunyiin ke kita?'),
+    CH('Pilih respons Andi', [{ l: 'Jujur tentang suka nari.', go: 's6a1' }, { l: 'Berbohong suka kartu kayak Dani.', go: 's6a2' }]),
+  ],
+  s6a1: [
+    S('Andi', 'Yaudahlah, jujur gw sebenarnya suka nari akhir-akhir ni.'),
+    S('Andi', 'Begitu tiap kali kalian ajak nongkrong gw gak bisa, soalnya gw pulang langsung latihan di rumah.'),
+    PC(20),
+    S('Zufar', 'Serius ni?'),
+    S('Deva', 'Wkwkwk, yang bener aja lu Di, masa cowok nari, bencong lu yak, hahaha.'),
+    GO('s6c'),
+  ],
+  s6a2: [
+    PC(-10),
+    S('Andi', 'Sebenarnya gw suka banget main kartu kek Dani!'),
+    S('Dani', 'Ha...'),
+    S('Deva', 'Lah, beneran?'),
+    S('Zufar', 'Nah, bener kan tebakan gw, jadi ini rahasia lu selama ni, Di?'),
+    S('Farel', 'Ish, mau aja kalian percaya sama si Andi ni.'),
+    S('Farel', 'Kan kita udah pernah ke rumahnya, mana ada tu kita nemuin ada kartu di sana.'),
+    S('Deva', 'Oh, iya juga ya.'),
+    S('Zufar', 'Berani-beraninya lu bohongin kita, orang lagi serius malah bercanda dia.'),
+    S('Farel', 'Udah cepetan ngaku lu Di, atau gw buat lu nyesel sekarang!'),
+    CH('Pilih respons Andi', [{ l: 'Jujur tentang suka nari.', go: 's6a2j' }]),
+  ],
+  s6a2j: [
+    S('Andi', 'Yaudahlah, jujur gw sebenarnya suka nari akhir-akhir ni.'),
+    S('Andi', 'Begitu tiap kali kalian ajak nongkrong gw gak bisa, soalnya gw pulang langsung latihan di rumah.'),
+    PC(20),
+    GO('s6c'),
+  ],
+  s6c: [
+    S('Farel', 'Terus apa hubungannya lu belain Dani? Deket kagak, yang kalian sukain juga beda.'),
+    S('Andi', 'Gw ngebela Dani bukan gegara gw temenan ma dia atau karena kesukaan kita sama.'),
+    S('Andi', 'Tapi karena gw sebagai sesama orang yang punya sesuatu yang gw pribadi sukain sama kek dia.'),
+    S('Andi', 'Gw jadinya gak terima kalau hal yang dia sukai lu hina gitu aja.'),
+    S('Andi', 'Emang lu pada terima kalau hal yang lu suka dihina juga?'),
+    PC(30),
+    S('Deva', 'Gak jaman tau, Di. Jadi pahlawan kesiangan sekarang, hahaha. Kasih paham mereka Rel!'),
+    S('Farel', '...'),
+    A('Farel meninggalkan Andi dan Dani tanpa mengucap sepatah kata pun.'),
+    ST('kelas', ['Andi', 'Deva', 'Zufar', 'Dani']),
+    S('Zufar', 'Udah lu diem aja Va, sini ikut gw!'),
+    S('Deva', 'Eh, eh, lu ngapain tarik gw Far...'),
+    A('Zufar menarik Deva pergi dari Andi dan Dani menyusul Farel.'),
+    ST('kelas', ['Andi', 'Dani']),
+    SC('Scene 7', 'Final Good Ending', 'kelas', ['Andi', 'Dani']),
+    S('Andi', 'Huh, bisa juga gw ternyata...'),
+    S('Dani', 'Makasih banget ya Di, jujur gw setelah dikatain kek gitu kemarin, gw sempet berpikir buat berhenti main kartu.'),
+    S('Dani', 'Tapi karena gw merasa ini bagian dari diri gw, dan gw udah telanjur cinta juga.'),
+    S('Dani', 'Jadi gw tetap bawa kartu gw sekarang.'),
+    S('Dani', 'Gegara lu gw jadi lebih percaya diri ma diri gw, makasih banget ya Di.'),
+    PC(20),
+    S('Andi', 'Iya, aman aja Dan, gw juga kemarin sempat ragu kek lu, cuman setelah gw ngeliat lu tetap berani bawa kartu lu ke sekolah, gw juga jadi mau yakin sama diri gw sendiri, makasih ya Dan.'),
+    S('Dani', 'Hahaha, gapapa Di, jadi sekarang temen lu gimana ni Di?'),
+    S('Andi', 'Hmmm...'),
+    S('Andi', 'Biarin aja dah dulu sekarang, hahaha.'),
+    END('GOOD ENDING', true),
+  ],
+
+  /* ===== ENDING 2 : BAD ===== */
+  s6b: [
+    PC(-999),                                   // memilih diam: kepercayaan diri jadi 0
+    S('Farel', 'Lama-lama juga kesel gw liat lu kekeh banget Dan.'),
+    A('Farel merampas semua kartu Dani dari tangannya.'),
+    SET('cards', 'gone'),
+    S('Dani', 'Pliss, tolong balikin kartu gw Rel!'),
+    S('Farel', 'Hahaha, ambil aja kalau lu bisa.'),
+    S('Zufar', 'Kasih paham Rel.'),
+    A('Farel melempar kartu Dani hingga berserakan.'),
+    SET('cards', 'floor'),
+    S('Deva', 'Hahaha, berani bet lu Rel.'),
+    A('Dani memungut kartunya yang berserakan di lantai.'),
+    S('Farel', 'Eitss.'),
+    S('Zufar', 'Gila ni anak, masih berani dia mungut kartu kesayangannya.'),
+    S('Farel', 'Gw kasih tahu lu ya bocah!'),
+    S('Farel', 'Selama gw masih ada, gak bakal gw buat lu mainin kartu sampah ni lagi.'),
+    CG('injak'),
+    A('Farel menginjak kartu yang hendak mau diambil Dani.'),
+    SET('cards', 'ruined'),
+    S('Dani', 'Tidakkkk!!'),
+    S('Zufar', 'Cuy, cabut guys, keburu ketahuan ma guru.'),
+    S('Deva', 'Awas aja ya ada yang berani cepu!'),
+    CG(null),
+    ST('kelas', ['Andi', 'Dani']),
+    A('Dani terdiam sambil melihat kartunya rusak habis diinjak Farel.'),
+    S('Andi', '...'),
+    SET('cards', 'gone'),
+    SC('Beberapa hari kemudian', '', 'kelas', FOUR),
+    N('Beberapa hari berlalu, dan Dani sudah tidak pernah membawa kartunya lagi.'),
+    N('Tidak hanya Dani yang berubah, tetapi Andi juga.'),
+    N('Walaupun terlihat sama saja, dan tetap berteman dekat dengan teman-temannya, selalu ada perasaan hampa di hati Andi yang membuat dirinya bingung dan cemas.'),
+    N('Meskipun begitu, Andi tidak merespon perasaan itu, dan terus mengikuti temannya.'),
+    SC('Scene Final', 'Tempat nongkrong', 'nongkrong', FOUR),
+    N('Suatu hari Andi sedang nongkrong bersama teman-temannya.'),
+    S('Deva', 'Weekend jalan-jalan yok!'),
+    S('Farel', 'Gak bisa gw minggu ni, gw mau nonton MotoGP bareng kakak gw.'),
+    S('Deva', 'Lah, lu suka nonton MotoGP Rel?'),
+    S('Farel', 'Iya, udah dari kecil gw suka.'),
+    S('Zufar', 'Sori ya, gw juga gak bisa, gw udah janjian mancing ma sepupu gw.'),
+    S('Deva', 'Gelok, kok ku baru tahu kalian suka MotoGP ma mancing?'),
+    S('Zufar', 'Lu nya sih gak pernah nanya.'),
+    S('Farel', 'Hahaha.'),
+    S('Deva', 'Jangan pikir cuman kalian doang yang rahasia.'),
+    S('Deva', 'Gw nih sebenarnya suka banget masak, gw udah bisa loh buat sushi kek di restoran Jepang-Jepang gitu, hehehe.'),
+    S('Zufar', 'Asek, keren juga lu Dev, kapan-kapan kalau gw dapat ikan, gw minta lu aja yang masak.'),
+    S('Deva', 'Ayok dah gas, wkwkwk.'),
+    S('Farel', 'Terus kamu Andi, ada gak yang kamu suka?'),
+    S('Andi', 'Gw suka main ma kalian.'),
+    S('Farel', 'Bukan ituloh, maksudnya hal yang kamu sukain pribadi, yang biasanya mu lakuin sendiri.'),
+    S('Andi', 'Gak ada yang gw suka kayaknya.'),
+    S('Zufar', 'Lah, serius??'),
+    S('Deva', 'Perasaan dulu lu sempat sering pulang sekolah duluan, lu gak ngelakuin sesuatu gitu di rumah?'),
+    S('Andi', 'Oh....'),
+    S('Andi', 'Gak.... Gak ada, gw main HP aja.'),
+    S('Farel', 'Owalah.'),
+    S('Deva', 'Pasti besok seru banget ya, hahaha.'),
+    S('Farel dan Zufar', 'Yoi, hahaha.'),
+    S('Andi', '....'),
+    END('BAD ENDING', false),
+  ],
+};
+
+/* ================= ENGINE ================= */
+const el = { hud: $('hud'), fill: $('fill'), pcn: $('pcn'), delta: $('delta'), dlg: $('dlg'), nm: $('nm'), txt: $('txt'), nxt: $('nxt'), ch: $('ch'), chT: $('chT'), chL: $('chL'), card: $('card'), title: $('title'), help: $('help'), end: $('end'), flash: $('flash') };
+let cur = { b: 'start', i: 0 };
+let typer = null, full = '', timers = [];
+let menu = null;           // {items, sel, wrap}
+const later = (fn, ms) => { const id = setTimeout(fn, FAST ? Math.min(ms, 30) : ms); timers.push(id); return id; };
+const clearTimers = () => { timers.forEach(clearTimeout); timers = []; clearInterval(typer); typer = null; };
+const hide = (...a) => a.forEach(e => e.style.display = 'none');
+
+function setHud() {
+  el.fill.style.width = st.pc + '%';
+  el.fill.style.background = st.pc > 60 ? 'var(--green)' : st.pc > 30 ? 'var(--gold)' : 'var(--red)';
+  el.pcn.textContent = st.pc;
+}
+
+function typeIn(text, cls) {
+  el.txt.className = cls || '';
+  el.txt.textContent = '';
+  el.nxt.style.display = 'none';
+  full = text; let i = 0;
+  st.mode = 'typing';
+  if (FAST) { el.txt.textContent = text; done(); return; }
+  typer = setInterval(() => {
+    i += 1; el.txt.textContent = text.slice(0, i);
+    if (i >= text.length) done();
+  }, 22);
+  function done() { clearInterval(typer); typer = null; el.txt.textContent = full; el.nxt.style.display = 'block'; st.mode = 'wait'; }
+}
+function finishTyping() {
+  clearInterval(typer); typer = null; el.txt.textContent = full; el.nxt.style.display = 'block'; st.mode = 'wait';
+}
+
+function showName(label, color) {
+  if (!label) { el.nm.style.display = 'none'; return; }
+  el.nm.textContent = label; el.nm.style.background = color || '#444'; el.nm.style.display = 'block';
+}
+const splitNames = w => w.split(/,\s*|\s+dan\s+/);
+
+function step() {
+  const s = (BL[cur.b] || [])[cur.i++];
+  if (!s) return;
+  switch (s.t) {
+    case 'scene': {
+      st.mode = 'card'; hide(el.dlg);
+      el.card.firstElementChild.textContent = s.a;
+      el.card.lastElementChild.textContent = s.b;
+      el.card.style.display = 'flex'; void el.card.offsetWidth; el.card.classList.add('on');
+      later(() => { st.bg = s.bg; st.cast = s.cast.slice(); st.speakers = []; st.cg = null; }, 450);
+      later(() => { el.card.classList.remove('on'); }, 1700);
+      later(() => { el.card.style.display = 'none'; el.dlg.style.display = 'block'; step(); }, 2100);
+      return;
+    }
+    case 'stage': st.bg = s.bg; st.cast = s.cast.slice(); return step();
+    case 'set': st[s.k] = s.v; return step();
+    case 'ifv': cur = { b: st[s.k] ? s.a : s.b, i: 0 }; return step();
+    case 'cg':
+      st.cg = s.id; st.cgT0 = performance.now();
+      if (s.id === 'injak') later(() => { el.flash.classList.remove('go'); void el.flash.offsetWidth; el.flash.classList.add('go'); }, 720);
+      return step();
+    case 'beat':
+      st.speakers = []; st.mode = 'busy'; el.dlg.style.display = 'none';
+      later(() => { el.dlg.style.display = 'block'; step(); }, s.ms);
+      return;
+    case 'say': {
+      const names = splitNames(s.w);
+      st.speakers = names;
+      showName(s.w, (CHR[names[0]] || {}).col);
+      typeIn(s.x, '');
+      return;
+    }
+    case 'hati':
+      st.speakers = ['Andi']; showName('Andi (dalam hati)', CHR.Andi.col); typeIn(s.x, 'thought'); return;
+    case 'narr':
+      st.speakers = []; showName(null); typeIn(s.x, 'narr'); return;
+    case 'act':
+      st.speakers = []; showName(null); typeIn('(' + s.x + ')', 'act'); return;
+    case 'pc': {
+      const old = st.pc;
+      st.pc = Math.max(0, Math.min(100, st.pc + s.n));
+      const d = st.pc - old;
+      setHud();
+      el.delta.textContent = d === 0 ? (s.n > 0 ? 'MAX' : '0') : (d > 0 ? '+' : '') + d;
+      el.delta.style.color = s.n > 0 ? 'var(--green)' : 'var(--red)';
+      el.delta.classList.remove('go'); void el.delta.offsetWidth; el.delta.classList.add('go');
+      if (s.n < 0) { el.hud.classList.remove('shake'); el.flash.classList.remove('go'); void el.hud.offsetWidth; el.hud.classList.add('shake'); el.flash.classList.add('go'); }
+      st.mode = 'pc';
+      later(step, 750);
+      return;
+    }
+    case 'choice': showChoice(s); return;
+    case 'go': cur = { b: s.to, i: 0 }; return step();
+    case 'end': showEnd(s); return;
+  }
+}
+
+function showChoice(s) {
+  st.mode = 'choice'; st.speakers = [];
+  el.txt.style.display = 'none'; el.nxt.style.display = 'none'; showName(null);
+  el.chT.textContent = '— ' + s.title + ' —';
+  el.ch.style.display = 'block';
+  setMenu(el.chL, s.opts.map((o, i) => ({ label: (i + 1) + '. ' + o.l, fn: () => {
+    el.ch.style.display = 'none'; el.txt.style.display = 'block'; menu = null;
+    cur = { b: o.go, i: 0 }; step();
+  } })));
+}
+
+/* ----- menu generik ----- */
+function setMenu(container, items) {
+  container.innerHTML = '';
+  menu = { items, sel: 0, btns: [] };
+  items.forEach((it, i) => {
+    const b = document.createElement('button');
+    b.className = 'mb' + (i === 0 ? ' sel' : ''); b.textContent = it.label;
+    b.addEventListener('click', e => { e.stopPropagation(); if (menu && menu.items === items) { selectMenu(i); activate(); } });
+    container.appendChild(b); menu.btns.push(b);
+  });
+}
+function selectMenu(i) {
+  if (!menu) return;
+  menu.sel = (i + menu.items.length) % menu.items.length;
+  menu.btns.forEach((b, k) => b.classList.toggle('sel', k === menu.sel));
+}
+function activate() { if (menu) { const f = menu.items[menu.sel].fn; f(); } }
+
+/* ----- layar ----- */
+function showTitle() {
+  clearTimers(); menu = null;
+  hide(el.hud, el.dlg, el.help, el.end, el.card);
+  cv.style.filter = '';
+  st.bg = 'gerbang'; st.cast = ['Andi']; st.speakers = []; st.cards = 'hand'; st.mode = 'menu'; st.cg = null; st.ejek = false;
+  el.title.style.display = 'flex';
+  setMenu($('tmenu'), [
+    { label: 'Mulai Cerita', fn: startGame },
+    { label: 'Cara Main', fn: showHelp },
+  ]);
+}
+function showHelp() {
+  el.title.style.display = 'none'; el.help.style.display = 'flex'; st.mode = 'menu';
+  setMenu($('hmenu'), [{ label: 'Kembali', fn: () => { el.help.style.display = 'none'; showTitle(); } }]);
+}
+function startGame() {
+  clearTimers();
+  st.pc = 100; st.cards = 'hand'; st.cg = null; st.ejek = false; setHud();
+  hide(el.title, el.help, el.end, el.card);
+  cv.style.filter = '';
+  el.hud.style.display = 'block'; el.dlg.style.display = 'block';
+  el.ch.style.display = 'none'; el.txt.style.display = 'block'; el.txt.textContent = ''; el.nm.style.display = 'none';
+  menu = null; cur = { b: 'start', i: 0 }; step();
+}
+const QUOTES = {
+  good: 'Kadang keberanian satu orang bikin orang lain berani jadi dirinya sendiri.',
+  bad: 'Berpura-pura supaya diterima bisa membuat kita kehilangan diri sendiri.'
+};
+function showEnd(s) {
+  st.mode = 'end'; st.speakers = [];
+  let found = [];
+  try { found = JSON.parse(localStorage.getItem('tt_endings') || '[]'); if (!found.includes(s.name)) { found.push(s.name); localStorage.setItem('tt_endings', JSON.stringify(found)); } } catch (e) { if (!found.includes(s.name)) found.push(s.name); }
+  later(() => {
+    hide(el.dlg); if (!s.good) cv.style.filter = 'grayscale(1) brightness(.7)';
+    $('eT').textContent = 'TAMAT';
+    $('eP').textContent = QUOTES[s.good ? 'good' : 'bad'];
+    $('eS').textContent = 'Ending: ' + s.name + '  |  Kepercayaan diri Andi: ' + st.pc;
+    $('eF').textContent = 'Ending ditemukan: ' + found.length + ' / 2';
+    el.end.style.display = 'flex';
+    setMenu($('emenu'), [
+      { label: 'Main Lagi', fn: startGame },
+      { label: 'Menu Utama', fn: showTitle },
+    ]);
+  }, s.good ? 700 : 900);
+}
+
+/* ----- input ----- */
+function advance() {
+  if (st.mode === 'typing') return finishTyping();
+  if (st.mode === 'wait') { st.mode = 'busy'; return step(); }
+}
+$('game').addEventListener('click', e => { if (e.target.closest('button')) return; advance(); });
+document.addEventListener('keydown', e => {
+  const k = e.key;
+  if (menu) {
+    if (k === 'ArrowDown' || k === 's') { selectMenu(menu.sel + 1); e.preventDefault(); }
+    else if (k === 'ArrowUp' || k === 'w') { selectMenu(menu.sel - 1); e.preventDefault(); }
+    else if (k === 'Enter' || k === ' ') { activate(); e.preventDefault(); }
+    else if (/^[1-9]$/.test(k) && menu.items[+k - 1]) { selectMenu(+k - 1); activate(); }
+    return;
+  }
+  if (k === 'Enter' || k === ' ' || k === 'ArrowRight') { advance(); e.preventDefault(); }
+});
+
+window.__game = { st, BL, get cur() { return cur; } };
+showTitle();
+})();
+</script>
+</body>
+</html>
