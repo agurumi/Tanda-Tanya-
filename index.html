@@ -24,6 +24,7 @@ body{display:flex;align-items:center;justify-content:center}
 @keyframes fl{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-3cqw)}}
 #hud.shake{animation:sh .35s}
 @keyframes sh{20%{transform:translateX(-.8cqw)}40%{transform:translateX(.8cqw)}60%{transform:translateX(-.5cqw)}80%{transform:translateX(.5cqw)}}
+#snd{position:absolute;right:2cqw;top:2cqh;z-index:12;font-size:1.7cqw;padding:.9cqw 1.2cqw;background:rgba(20,18,31,.85);color:var(--cream);border:.4cqw solid var(--cream);cursor:pointer}
 #flash{position:absolute;inset:0;background:#ef476f;opacity:0;pointer-events:none;z-index:4}
 #flash.go{animation:fs .4s}
 @keyframes fs{0%{opacity:.35}100%{opacity:0}}
@@ -74,6 +75,7 @@ body{display:flex;align-items:center;justify-content:center}
   html,body{align-items:flex-start}
   #game{width:100vw;height:100vh;height:100dvh;aspect-ratio:auto}
   #cv{height:auto;aspect-ratio:16/9;width:100%}
+  #snd{font-size:3cqw;padding:1.6cqw 2cqw;right:2cqw;top:2cqw}
   #hud{width:56cqw;font-size:3.2cqw;padding:1.2cqw 1.6cqw;left:2cqw;top:2cqw}
   #bar{height:2.8cqw}
   #dlg{left:2.5cqw;right:2.5cqw;top:calc(56.25cqw + 9cqw);bottom:2.5cqw;height:auto;padding:5.2cqw 3.6cqw 3.2cqw}
@@ -97,6 +99,7 @@ body{display:flex;align-items:center;justify-content:center}
 <div id="game">
   <canvas id="cv"></canvas>
   <div id="flash"></div>
+  <button id="snd" class="px" tabindex="-1" aria-label="Musik">♪ ON</button>
   <div id="hud"><div class="lb"><span>KEPERCAYAAN DIRI</span><span id="pcn">100</span></div><div id="bar"><div id="fill"></div><div id="delta"></div></div></div>
   <div id="dlg"><div id="nm"></div><div id="txt"></div><div id="nxt">▼</div><div id="ch"><div id="chT"></div><div id="chL"></div></div></div>
   <div id="card" class="ov"><div class="a px"></div><div class="b"></div></div>
@@ -410,7 +413,7 @@ function drawCG(now) {
 }
 
 /* ================= STATE ================= */
-const st = { pc: 100, bg: 'gerbang', cast: [], speakers: [], cards: 'hand', mode: 'menu', cg: null, cgT0: 0, ejek: false };
+const st = { pc: 100, bg: 'gerbang', cast: [], speakers: [], cards: 'hand', mode: 'menu', cg: null, cgT0: 0, ejek: false, ikut: false };
 const FEET = 54;
 function castX(i, n) { return Math.round((i + 1) * W / (n + 1)); }
 let T0 = performance.now();
@@ -440,6 +443,7 @@ const SET = (k, v) => ({ t: 'set', k, v });
 const IF = (k, a, b) => ({ t: 'ifv', k, a, b });
 const CG = id => ({ t: 'cg', id });
 const BEAT = ms => ({ t: 'beat', ms });
+const BGM = id => ({ t: 'bgm', id });
 const CH = (title, opts) => ({ t: 'choice', title, opts });
 const GO = to => ({ t: 'go', to });
 const END = (name, good) => ({ t: 'end', name, good });
@@ -451,14 +455,18 @@ const FDZ = 'Farel, Deva, Zufar';
 const BL = {
   /* ===== SCENE 1 - 3 ===== */
   start: [
+    BGM('s1'),
     SC('Scene 1', 'Pulang sekolah', 'gerbang', FOUR),
     S('Andi', 'Gw pulang duluan ya teman-teman.'),
     S(FDZ, 'Yok, hati-hati ya Di.'),
+    BGM('s2'),
     SC('Scene 2', 'Rumah Andi', 'kamar', AND),
     S('Andi', 'Akhirnya sampai rumah juga.'),
+    BGM('dance'),
     CG('kaset'),
     S('Andi', 'Lanjutin latihan dance kemarin ah, lagu kemarin juga belum benar-benar lancar, yok gaskan.'),
     BEAT(2800),
+    BGM('s3'),
     SC('Scene 3', 'Keesokan harinya di sekolah', 'kelas', FIVE),
     N('Andi baru sampai ke depan kelas dan mendengar teman-temannya sedang mengobrol.'),
     S('Farel', 'Bocah lu yak, Dan. Jaman sekarang mah mana ada mah cowok mainan kartu gambar kartun gak jelas kayak gini.'),
@@ -503,6 +511,7 @@ const BL = {
 
   /* ===== SCENE 4 ===== */
   s4: [
+    BGM('s4'),
     SC('Scene 4', 'Pulang sekolah', 'gerbang2', FOUR),
     S('Andi', 'Gw pulang duluan ya.'),
     S('Farel', 'Eh, Di. Nongkrong dulu dah yuk, dah lama nih kita gak nongkrong berempat.'),
@@ -510,6 +519,7 @@ const BL = {
     CH('Pilih respons Andi', [{ l: 'Ikut nongkrong.', go: 's4a' }, { l: 'Gak ikut nongkrong.', go: 's4b' }]),
   ],
   s4a: [
+    SET('ikut', true),
     S('Andi', 'Gw ikut dah.'),
     ST('nongkrong', FOUR),
     N('Andi dan teman-temannya berangkat ke tempat nongkrong.'),
@@ -531,6 +541,7 @@ const BL = {
     GO('s5'),
   ],
   s4b: [
+    SET('ikut', false),
     Hh('Aduh, gw jawab apa ya... Kalau gw jawab mau latihan nari, yang ada gw lagi dibully kek si Dani.'),
     PC(-10),
     S('Andi', 'Sori banget ni bro, akhir-akhir ni gw banyak kerjaan di rumah, jadi susah mau nongkrong bareng abis pulang sekolah.'),
@@ -543,12 +554,13 @@ const BL = {
 
   /* ===== SCENE 5 ===== */
   s5: [
+    BGM('s5'),
     SC('Scene 5', 'Malam hari di rumah Andi', 'malam', AND),
     N('Andi kembali mengingat peristiwa tadi pagi di kelas.'),
     Hh('Kasian banget dah ya si Dani tadi, padahal dianya cuman demen main kartu doang, tapi malah dibully ma yang lain.'),
     Hh('Kalau dia yang suka main kartu aja digituin gimana gw ya, yang suka nari.'),
     Hh('Jujur gw juga gak terima kesukaan orang dikatain begitu, tapi kalau gw ngebela yang ada gw dijauhin ma teman-teman gw.'),
-    IF('ejek', 's5a', 's5b'),
+    IF('ejek', 's5a', 's5x'),
   ],
   s5a: [
     Hh('Tapi gw udah ikut ngejek.'),
@@ -556,25 +568,36 @@ const BL = {
     Hh('Lagian gak asik juga punya kesukaan yang beda sendiri, mana aneh bet lagi, mana ada coba cowok yang suka nari, berhenti aja dah.'),
     GO('s5c'),
   ],
-  s5b: [
-    Hh('Atau gw berhenti dance aja ya, biar gw gak dianggap aneh, gw juga gak bisa boong tiap hari.'),
+  s5x: [IF('ikut', 's5b1', 's5b2')],
+  s5b1: [
+    Hh('Gw juga gak mau dianggap aneh sama mereka.'),
+    Hh('Mungkin lebih baik gw berhenti dance aja, daripada nanti gw ikut dibully kek Dani.'),
     GO('s5c'),
   ],
-  s5c: [
+  s5b2: [
+    Hh('Atau gw berhenti dance aja ya, biar gw gak dianggap aneh, gw juga gak bisa boong tiap hari.'),
     PC(-10),
     Hh('Aduh, mending tidur aja dah.'),
+    GO('s6'),
+  ],
+  s5c: [     // jalur 3A / 4A: Andi sudah memutuskan berhenti nari, tanpa kalimat "mending tidur"
+    PC(-10),
     GO('s6'),
   ],
 
   /* ===== SCENE 6 ===== */
   s6: [
+    BGM('s6'),
     SC('Scene 6', 'Keesokan harinya di sekolah', 'kelas', FIVE),
     S('Andi', 'Oy.'),
     S(FDZ, 'Pagi Di.'),
     S('Deva', 'Guys, liat noh si Dani, udah dikatain, masih aja dia bawa kartu kesukaannya ke sekolah.'),
     S('Zufar', 'Wah, tu orang kita kasih tau biar berubah, malah masih kekeh aja jadi bocah, kasih paham tu dia Rel.'),
-    CH('Pilih respons Andi', [{ l: 'Memberanikan diri membantu Dani.', go: 's6a' }, { l: 'Diam aja.', go: 's6b' }]),
+    IF('ejek', 's6L', 's6m'),
   ],
+  s6m: [IF('ikut', 's6L', 's6O')],
+  s6L: [CH('Pilih respons Andi', [{ l: 'Diam aja.', go: 's6b' }])],
+  s6O: [CH('Pilih respons Andi', [{ l: 'Memberanikan diri membantu Dani.', go: 's6a' }, { l: 'Diam aja.', go: 's6b' }])],
 
   /* ===== ENDING 1 : GOOD ===== */
   s6a: [
@@ -596,6 +619,7 @@ const BL = {
     GO('s6c'),
   ],
   s6a2: [
+    BGM('canggung'),
     PC(-10),
     S('Andi', 'Sebenarnya gw suka banget main kartu kek Dani!'),
     S('Dani', 'Ha...'),
@@ -615,12 +639,14 @@ const BL = {
     GO('s6c'),
   ],
   s6c: [
+    BGM('s6'),
     S('Farel', 'Terus apa hubungannya lu belain Dani? Deket kagak, yang kalian sukain juga beda.'),
     S('Andi', 'Gw ngebela Dani bukan gegara gw temenan ma dia atau karena kesukaan kita sama.'),
     S('Andi', 'Tapi karena gw sebagai sesama orang yang punya sesuatu yang gw pribadi sukain sama kek dia.'),
     S('Andi', 'Gw jadinya gak terima kalau hal yang dia sukai lu hina gitu aja.'),
     S('Andi', 'Emang lu pada terima kalau hal yang lu suka dihina juga?'),
     PC(30),
+    BGM('tenang'),
     S('Deva', 'Gak jaman tau, Di. Jadi pahlawan kesiangan sekarang, hahaha. Kasih paham mereka Rel!'),
     S('Farel', '...'),
     A('Farel meninggalkan Andi dan Dani tanpa mengucap sepatah kata pun.'),
@@ -629,6 +655,7 @@ const BL = {
     S('Deva', 'Eh, eh, lu ngapain tarik gw Far...'),
     A('Zufar menarik Deva pergi dari Andi dan Dani menyusul Farel.'),
     ST('kelas', ['Andi', 'Dani']),
+    BGM('harapan'),
     SC('Scene 7', 'Final Good Ending', 'kelas', ['Andi', 'Dani']),
     S('Andi', 'Huh, bisa juga gw ternyata...'),
     S('Dani', 'Makasih banget ya Di, jujur gw setelah dikatain kek gitu kemarin, gw sempet berpikir buat berhenti main kartu.'),
@@ -645,6 +672,7 @@ const BL = {
 
   /* ===== ENDING 2 : BAD ===== */
   s6b: [
+    BGM('gelap'),
     PC(-999),                                   // memilih diam: kepercayaan diri jadi 0
     S('Farel', 'Lama-lama juga kesel gw liat lu kekeh banget Dan.'),
     A('Farel merampas semua kartu Dani dari tangannya.'),
@@ -671,11 +699,19 @@ const BL = {
     A('Dani terdiam sambil melihat kartunya rusak habis diinjak Farel.'),
     S('Andi', '...'),
     SET('cards', 'gone'),
-    SC('Beberapa hari kemudian', '', 'kelas', FOUR),
+    BGM('hampa'),
+    SC('Beberapa hari kemudian', '', 'hitam', []),
     N('Beberapa hari berlalu, dan Dani sudah tidak pernah membawa kartunya lagi.'),
     N('Tidak hanya Dani yang berubah, tetapi Andi juga.'),
     N('Walaupun terlihat sama saja, dan tetap berteman dekat dengan teman-temannya, selalu ada perasaan hampa di hati Andi yang membuat dirinya bingung dan cemas.'),
     N('Meskipun begitu, Andi tidak merespon perasaan itu, dan terus mengikuti temannya.'),
+    IF('ejek', 'bk1', 'bkx'),
+  ],
+  bkx: [IF('ikut', 'bk1', 'bk2')],
+  bk1: [N('Andi akhirnya berhenti latihan dance dan perlahan meninggalkan kesukaannya itu.'), GO('final')],
+  bk2: [N('Andi juga mulai meninggalkan kesukaan dance-nya karena takut dianggap berbeda oleh teman-temannya.'), GO('final')],
+  final: [
+    BGM('ironis'),
     SC('Scene Final', 'Tempat nongkrong', 'nongkrong', FOUR),
     N('Suatu hari Andi sedang nongkrong bersama teman-temannya.'),
     S('Deva', 'Weekend jalan-jalan yok!'),
@@ -706,6 +742,140 @@ const BL = {
   ],
 };
 
+/* ================= AUDIO: BGM 8-bit + suara dialog (dibuat langsung via Web Audio) ================= */
+const TRACKS = {
+  menu:     { bpm: 96,  lead: 'E5 - G5 E5 C5 - D5 - | F5 - A5 F5 D5 - E5 - | G5 - E5 G5 A5 - G5 - | E5 - D5 - C5 - - -',
+              bass: 'C3 - G3 - C3 - G3 - | F3 - C4 - F3 - C4 - | A2 - E3 - A2 - E3 - | G2 - D3 - C3 - - -', drum: 'h...h...' },
+  s1:       { bpm: 132, lead: 'G5 B5 D6 B5 G5 B5 D6 - | E6 D6 B5 G5 A5 B5 A5 - | C6 B5 A5 G5 F#5 G5 A5 - | B5 A5 G5 A5 D5 - - -',
+              bass: 'G3 - D3 - G3 - D3 - | E3 - B2 - E3 - B2 - | C3 - G3 - C3 - G3 - | D3 - A2 - D3 - D3 -', drum: 'k.h.s.h.' },
+  s2:       { bpm: 108, lead: 'A5 - C6 - A5 - F5 - | G5 - Bb5 - G5 - E5 - | F5 A5 C6 A5 F5 - E5 - | D5 - F5 - C5 - - -',
+              bass: 'F3 - C3 - F3 - C3 - | C3 - G3 - C3 - G3 - | D3 - A3 - D3 - A3 - | Bb2 - C3 - F3 - - -', drum: 'h.h.h.h.' },
+  dance:    { bpm: 118, grid: 4, lg: 0.08,        // pop dance 4-on-the-floor, progresi C - G - Am - F
+              lead: 'E5 - - G5 - - A5 - - G5 - - E5 - D5 - | D5 - - G5 - - B5 - - A5 - - G5 - - - | C6 - - E6 - - D6 - - C6 - - A5 - G5 - | A5 - - C6 - - A5 - - F5 - - G5 - A5 - | G5 - - G5 - - E6 - - D6 - - C6 - G5 - | B5 - - B5 - - D6 - - B5 - - A5 - G5 - | C6 - - C6 - - E6 - - D6 - - C6 - B5 - | A5 - - C6 - - A5 - G5 - - F5 - - - -',
+              bass: 'C3 - C4 - C3 - C4 - C3 - C4 - C3 - C4 - | G2 - G3 - G2 - G3 - G2 - G3 - G2 - G3 - | A2 - A3 - A2 - A3 - A2 - A3 - A2 - A3 - | F2 - F3 - F2 - F3 - F2 - F3 - F2 - F3 -',
+              arp:  'C4 E4 G4 E4 C4 E4 G4 E4 C4 E4 G4 E4 C4 E4 G4 E4 | B3 D4 G4 D4 B3 D4 G4 D4 B3 D4 G4 D4 B3 D4 G4 D4 | A3 C4 E4 C4 A3 C4 E4 C4 A3 C4 E4 C4 A3 C4 E4 C4 | A3 C4 F4 C4 A3 C4 F4 C4 A3 C4 F4 C4 A3 C4 F4 C4',
+              drum: ['k...k...k...k...', '....s.......s...', '..h...h...h...h.'] },
+  s3:       { bpm: 66,  lw: 'triangle', lg: 0.13, lead: 'E5 - - - D5 - C5 - | B4 - - - A4 - - - | C5 - - - B4 - A4 - | G#4 - - - A4 - - -',
+              bass: 'A2 - - - E3 - - - | G2 - - - D3 - - - | F2 - - - C3 - - - | E2 - - - E2 - - -' },
+  s4:       { bpm: 92,  lead: 'F#5 - A5 - F#5 - E5 - | D5 - F#5 - G5 - Eb5 - | E5 - G5 - E5 - C#5 - | D5 - - - A4 - - -',
+              bass: 'D3 - A3 - D3 - A3 - | G2 - D3 - G2 - Db3 - | A2 - E3 - A2 - E3 - | D3 - - - A2 - - -', drum: 'k...h...' },
+  s5:       { bpm: 120, lead: 'E5 F5 E5 D#5 E5 F5 E5 - | C5 C#5 C5 B4 C5 C#5 C5 - | D5 D#5 D5 C#5 D5 D#5 D5 - | B4 C5 B4 A#4 B4 C5 B4 -',
+              bass: 'A2 - A2 - A2 - A2 - | A2 - A2 - Ab2 - A2 - | G2 - G2 - G2 - G2 - | E2 - E2 - Eb2 - E2 -', drum: '..h...h.' },
+  s6:       { bpm: 140, lg: 0.06, lead: 'E5 - E5 - G5 - F#5 - | E5 - E5 - Bb5 - A5 - | E5 - E5 - G5 - F#5 - | D#5 - E5 - - - - -',
+              bass: 'E2 E2 E3 E2 E2 E2 E3 E2 | C2 C2 C3 C2 C2 C2 C3 C2 | E2 E2 E3 E2 E2 E2 E3 E2 | B1 B1 B2 B1 B1 B1 B2 B1', drum: 'k.k.....' },
+  canggung: { bpm: 100, lead: '- - E5 - - - Bb5 - | - - A5 - - - Eb5 - | - - G5 - - - C#5 - | - - E5 - - - - -',
+              bass: 'E3 - - - B2 - - - | C3 - - - F#2 - - - | A2 - - - Eb3 - - - | E3 - - - - - - -', drum: 'h.......' },
+  tenang:   { bpm: 84,  lead: 'E5 - G5 - C6 - B5 - | A5 - G5 - E5 - - - | F5 - A5 - G5 - E5 - | D5 - E5 - C5 - - -',
+              bass: 'C3 - G3 - C3 - G3 - | A2 - E3 - A2 - E3 - | F2 - C3 - F2 - C3 - | G2 - D3 - C3 - - -' },
+  harapan:  { bpm: 100, lead: 'D5 - F#5 A5 D6 - C#6 - | B5 - A5 F#5 G5 - A5 - | B5 - D6 B5 A5 - F#5 - | E5 - F#5 G5 A5 - - -',
+              bass: 'D3 - A3 - D3 - A3 - | G2 - D3 - G2 - D3 - | B2 - F#3 - B2 - F#3 - | E3 - A2 - A3 - A2 -', drum: 'k...h...' },
+  gelap:    { bpm: 72,  lg: 0.05, lead: 'D5 - - - F5 - E5 - | D5 - - - A4 - - - | Bb4 - - - A4 - G4 - | A4 - - - - - - -',
+              bass: 'D2 - D2 - A1 - A1 - | Bb1 - Bb1 - F2 - F2 - | G1 - G1 - D2 - D2 - | A1 - A1 - A1 - - -', drum: 'k...k...' },
+  hampa:    { bpm: 60,  lw: 'triangle', lg: 0.13, lead: 'A4 - - - - - E5 - | - - - - D5 - - - | C5 - - - - - B4 - | - - - - A4 - - -',
+              bass: 'A2 - - - - - - - | F2 - - - - - - - | C3 - - - - - - - | E2 - - - - - - -' },
+  ironis:   { bpm: 104, lead: 'C5 E5 G5 - Db5 F5 Ab5 - | C5 E5 G5 - B4 D5 F5 - | A4 C5 E5 - Bb4 D5 F5 - | G5 - E5 - C5 - - -',
+              bass: 'C3 - G3 - Db3 - Ab3 - | C3 - G3 - B2 - F3 - | A2 - E3 - Bb2 - F3 - | G2 - C3 - C3 - - -', drum: 'k.h.k.h.' },
+};
+// suara dialog tiap karakter (bit-bit pendek ala RPG klasik)
+const VOICE = {
+  Andi:  { t: 'square',   f: 460, g: 0.16 },
+  Farel: { t: 'sawtooth', f: 250, g: 0.11 },
+  Deva:  { t: 'triangle', f: 330, g: 0.22 },
+  Zufar: { t: 'sawtooth', f: 175, g: 0.12 },
+  Dani:  { t: 'square',   f: 640, g: 0.12 },
+};
+const Aud = (() => {
+  let ctx = null, master, musicBus, sfxBus, noise, cur = null, want = null, muted = false;
+  try { muted = localStorage.getItem('tt_mute') === '1'; } catch (e) {}
+  const SEMI = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const midi = tok => { const m = /^([A-G])([#b]?)(\d)$/.exec(tok); return m ? 12 * (+m[3] + 1) + SEMI[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) : null; };
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+  function parse(str) {
+    const tk = str.replace(/\|/g, ' ').trim().split(/\s+/), out = new Array(tk.length).fill(null); let last = -1;
+    tk.forEach((t, i) => {
+      if (t === '-') { if (last >= 0) out[last].len++; }
+      else { const n = midi(t); if (n === null) { last = -1; return; } out[i] = { n, len: 1 }; last = i; }
+    });
+    return out;
+  }
+  function init() {
+    if (ctx) return true;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
+    musicBus = ctx.createGain(); musicBus.gain.value = 0.55; musicBus.connect(master);     // BGM
+    sfxBus = ctx.createGain(); sfxBus.gain.value = 0.6; sfxBus.connect(master);            // suara dialog (terpisah dari BGM)
+    noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return true;
+  }
+  function tone(type, f, t, dur, vol, bus) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(vol * 0.55, t + Math.max(0.03, dur * 0.8));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.04);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t + dur + 0.06);
+  }
+  function hit(kind, t, bus) {
+    if (kind === 'k') {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+      g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+      o.connect(g); g.connect(bus); o.start(t); o.stop(t + 0.16);
+    } else {
+      const s = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+      s.buffer = noise; f.type = 'highpass'; f.frequency.value = kind === 'h' ? 7000 : 1800;
+      g.gain.setValueAtTime(kind === 'h' ? 0.05 : 0.16, t); g.gain.exponentialRampToValueAtTime(0.0001, t + (kind === 'h' ? 0.04 : 0.1));
+      s.connect(f); f.connect(g); g.connect(bus); s.start(t); s.stop(t + 0.12);
+    }
+  }
+  function pump(tr) {
+    if (tr.next < ctx.currentTime - 0.1) tr.next = ctx.currentTime + 0.02;
+    while (tr.next < ctx.currentTime + 0.3) {
+      const i = tr.i, t = tr.next, T = tr.T;
+      const l = tr.lead[i % tr.lead.length]; if (l) tone(T.lw || 'square', hz(l.n), t, l.len * tr.sd * 0.92, T.lg || 0.075, tr.bus);
+      const b = tr.bass[i % tr.bass.length]; if (b) tone('triangle', hz(b.n), t, b.len * tr.sd * 0.95, 0.17, tr.bus);
+      if (tr.arp) { const a = tr.arp[i % tr.arp.length]; if (a) tone('square', hz(a.n), t, a.len * tr.sd * 0.85, 0.035, tr.bus); }
+      for (const L of tr.drum) { const d = L[i % L.length]; if (d !== '.') hit(d, t, tr.bus); }
+      tr.next += tr.sd; tr.i++;
+    }
+  }
+  function start(name) {
+    const T = TRACKS[name]; if (!T) return null;
+    const bus = ctx.createGain(); bus.gain.value = 0; bus.connect(musicBus); bus.gain.setTargetAtTime(1, ctx.currentTime, 0.2);
+    const tr = { name, bus, T, i: 0, next: ctx.currentTime + 0.08, sd: 60 / T.bpm / (T.grid || 2), lead: parse(T.lead), bass: parse(T.bass), arp: T.arp ? parse(T.arp) : null, drum: Array.isArray(T.drum) ? T.drum : (T.drum ? [T.drum] : []) };
+    tr.timer = setInterval(() => pump(tr), 50);
+    return tr;
+  }
+  function stop(tr) { clearInterval(tr.timer); tr.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.12); setTimeout(() => { try { tr.bus.disconnect(); } catch (e) {} }, 900); }
+  const api = {
+    play(name) {                                   // ganti BGM (crossfade); dicatat dulu kalau audio belum dibuka
+      want = name;
+      if (!ctx || (cur && cur.name === name)) return;
+      if (cur) stop(cur);
+      cur = start(name);
+    },
+    unlock() {                                     // harus dipanggil dari klik / ketukan pertama
+      if (!init()) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      if (!cur && want) { const w = want; want = null; api.play(w); }
+    },
+    blip(name, soft) {
+      if (!ctx || muted) return;
+      const v = VOICE[name] || VOICE.Andi, t = ctx.currentTime;
+      tone(v.t, v.f * (0.9 + Math.random() * 0.2), t, 0.045, v.g * (soft ? 0.6 : 1), sfxBus);
+    },
+    toggle() { muted = !muted; try { localStorage.setItem('tt_mute', muted ? '1' : '0'); } catch (e) {} if (master) master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.05); return muted; },
+    isMuted: () => muted,
+    get track() { return cur ? cur.name : want; },
+    get want() { return want; },
+  };
+  document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else ctx.resume(); });
+  return api;
+})();
+
 /* ================= ENGINE ================= */
 const el = { hud: $('hud'), fill: $('fill'), pcn: $('pcn'), delta: $('delta'), dlg: $('dlg'), nm: $('nm'), txt: $('txt'), nxt: $('nxt'), ch: $('ch'), chT: $('chT'), chL: $('chL'), card: $('card'), title: $('title'), help: $('help'), end: $('end'), flash: $('flash') };
 let cur = { b: 'start', i: 0 };
@@ -721,7 +891,7 @@ function setHud() {
   el.pcn.textContent = st.pc;
 }
 
-function typeIn(text, cls) {
+function typeIn(text, cls, voice) {
   el.txt.className = cls || '';
   el.txt.textContent = '';
   el.nxt.style.display = 'none';
@@ -730,6 +900,7 @@ function typeIn(text, cls) {
   if (FAST) { el.txt.textContent = text; done(); return; }
   typer = setInterval(() => {
     i += 1; el.txt.textContent = text.slice(0, i);
+    if (voice && i % 2 === 1 && text[i - 1] !== ' ') Aud.blip(voice, cls === 'thought');
     if (i >= text.length) done();
   }, 22);
   function done() { clearInterval(typer); typer = null; el.txt.textContent = full; el.nxt.style.display = 'block'; st.mode = 'wait'; }
@@ -760,6 +931,7 @@ function step() {
     }
     case 'stage': st.bg = s.bg; st.cast = s.cast.slice(); return step();
     case 'set': st[s.k] = s.v; return step();
+    case 'bgm': Aud.play(s.id); return step();
     case 'ifv': cur = { b: st[s.k] ? s.a : s.b, i: 0 }; return step();
     case 'cg':
       st.cg = s.id; st.cgT0 = performance.now();
@@ -773,11 +945,11 @@ function step() {
       const names = splitNames(s.w);
       st.speakers = names;
       showName(s.w, (CHR[names[0]] || {}).col);
-      typeIn(s.x, '');
+      typeIn(s.x, '', names[0]);
       return;
     }
     case 'hati':
-      st.speakers = ['Andi']; showName('Andi (dalam hati)', CHR.Andi.col); typeIn(s.x, 'thought'); return;
+      st.speakers = ['Andi']; showName('Andi (dalam hati)', CHR.Andi.col); typeIn(s.x, 'thought', 'Andi'); return;
     case 'narr':
       st.speakers = []; showName(null); typeIn(s.x, 'narr'); return;
     case 'act':
@@ -806,7 +978,8 @@ function showChoice(s) {
   el.txt.style.display = 'none'; el.nxt.style.display = 'none'; showName(null);
   el.chT.textContent = '— ' + s.title + ' —';
   el.ch.style.display = 'block';
-  setMenu(el.chL, s.opts.map((o, i) => ({ label: (i + 1) + '. ' + o.l, fn: () => {
+  const guardT = FAST ? 0 : performance.now() + 450;
+  setMenu(el.chL, s.opts.map((o, i) => ({ guard: guardT, label: (i + 1) + '. ' + o.l, fn: () => {
     el.ch.style.display = 'none'; el.txt.style.display = 'block'; menu = null;
     cur = { b: o.go, i: 0 }; step();
   } })));
@@ -828,14 +1001,14 @@ function selectMenu(i) {
   menu.sel = (i + menu.items.length) % menu.items.length;
   menu.btns.forEach((b, k) => b.classList.toggle('sel', k === menu.sel));
 }
-function activate() { if (menu) { const f = menu.items[menu.sel].fn; f(); } }
+function activate() { if (menu) { const it = menu.items[menu.sel]; if (it.guard && performance.now() < it.guard) return; it.fn(); } }
 
 /* ----- layar ----- */
 function showTitle() {
   clearTimers(); menu = null;
   hide(el.hud, el.dlg, el.help, el.end, el.card);
   cv.style.filter = '';
-  st.bg = 'gerbang'; st.cast = ['Andi']; st.speakers = []; st.cards = 'hand'; st.mode = 'menu'; st.cg = null; st.ejek = false;
+  st.bg = 'gerbang'; st.cast = ['Andi']; st.speakers = []; st.cards = 'hand'; st.mode = 'menu'; st.cg = null; st.ejek = false; st.ikut = false; Aud.play('menu');
   el.title.style.display = 'flex';
   setMenu($('tmenu'), [
     { label: 'Mulai Cerita', fn: startGame },
@@ -848,7 +1021,7 @@ function showHelp() {
 }
 function startGame() {
   clearTimers();
-  st.pc = 100; st.cards = 'hand'; st.cg = null; st.ejek = false; setHud();
+  st.pc = 100; st.cards = 'hand'; st.cg = null; st.ejek = false; st.ikut = false; setHud();
   hide(el.title, el.help, el.end, el.card);
   cv.style.filter = '';
   el.hud.style.display = 'block'; el.dlg.style.display = 'block';
@@ -895,7 +1068,12 @@ document.addEventListener('keydown', e => {
   if (k === 'Enter' || k === ' ' || k === 'ArrowRight') { advance(); e.preventDefault(); }
 });
 
-window.__game = { st, BL, get cur() { return cur; } };
+const snd = $('snd');
+const refreshSnd = () => { snd.textContent = Aud.isMuted() ? '♪ OFF' : '♪ ON'; };
+snd.addEventListener('click', e => { e.stopPropagation(); Aud.toggle(); refreshSnd(); snd.blur(); });
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => Aud.unlock(), true));
+refreshSnd();
+window.__game = { st, BL, Aud, get cur() { return cur; } };
 showTitle();
 })();
 </script>
